@@ -1,0 +1,29 @@
+{
+    "name": "spacedmonkey/advanced-nav-cache",
+    "description": "Cache wp_nav_menu out in object cacheds",
+    "homepage": "https://github.com/spacedmonkey/advanced-nav-cache/",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Jonathan Harris",
+            "homepage": "http://www.jonathandavidharris.co.uk/"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/spacedmonkey/advanced-nav-cache/issues",
+        "source": "https://github.com/spacedmonkey/advanced-nav-cache/"
+    },
+    "require": {
+        "php": ">=5.3",
+        "composer/installers": "~1.0"
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "dev-develop",
+        "sebastian/phpcpd": "*"
+    },
+    "scripts": {
+        "post-install-cmd": "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs",
+        "post-update-cmd": "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs"
+    }
+}

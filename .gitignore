@@ -1,0 +1,33 @@
+############
+## Composer
+############
+vendor/
+composer.lock
+
+############
+## OSes
+############
+
+*.DS_store
+.DS_store?
+
+############
+## IDEs
+############
+
+*.pydevproject
+.project
+.metadata
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+.externalToolBuilders/
+*.launch
+.cproject
+.buildpath
+nbproject/
+node_modules/*
+premium/node_modules/*
