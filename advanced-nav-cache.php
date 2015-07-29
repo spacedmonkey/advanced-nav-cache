@@ -295,7 +295,7 @@ class Advanced_Nav_Cache {
 			$enabled = $this->cache_on_single;
 		}
 
-		return apply_filters( 'filter_name', $enabled, $args );
+		return apply_filters( 'advanced-nav-cache-enabled', $enabled, $args );
 	}
 
 }
