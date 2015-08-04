@@ -1,6 +1,6 @@
 {
     "name": "spacedmonkey/advanced-nav-cache",
-    "description": "Cache wp_nav_menu out in object cacheds",
+    "description": "Cache wp_nav_menu output in object cache",
     "homepage": "https://github.com/spacedmonkey/advanced-nav-cache/",
     "type": "wordpress-plugin",
     "license": "GPL-2.0+",

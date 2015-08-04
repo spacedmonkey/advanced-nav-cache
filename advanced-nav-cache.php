@@ -1,6 +1,6 @@
 <?php
 /**
- * Cache wp_nav_menu out in object cached
+ * Cache wp_nav_menu output in object cache.
  *
  *
  * @package   Advanced_Nav_Cache
@@ -12,13 +12,12 @@
  * @wordpress-plugin
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
- * Description:        Cache wp_nav_menu out in object cached
+ * Description:        Cache wp_nav_menu output in object cache.
  * Version:            1.0.0
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
  * License URI:        http://www.gnu.org/licenses/gpl-2.0.txt
- * Domain Path:        /languages
  * GitHub Plugin URI:  https://www.github.com/spacedmonkey/advanced-nav-cache
  */
 
@@ -61,16 +60,6 @@ class Advanced_Nav_Cache {
 	 */
 	var $cache_group = ''; // CACHE_GROUP_PREFIX . $cache_incr
 
-	// custom caching rules
-	/**
-	 * @var bool
-	 */
-	var $cache_on_single;
-	/**
-	 * @var bool
-	 */
-	var $cache_on_search;
-
 	/**
 	 *
 	 */
@@ -79,14 +68,6 @@ class Advanced_Nav_Cache {
 		if ( function_exists( 'wp_cache_add_group_prefix_map' ) ) {
 			wp_cache_add_group_prefix_map( $this->CACHE_GROUP_PREFIX, 'advanced_nav_cache' );
 		}
-
-		defined( 'ANC_ENABLE_ON_SINGLE' ) or define( 'ANC_ENABLE_ON_SINGLE', true );
-
-		defined( 'ANC_ENABLE_ON_SEARCH' ) or define( 'ANC_ENABLE_ON_SEARCH', true );
-
-		$this->cache_on_single = ANC_ENABLE_ON_SINGLE;
-		$this->cache_on_search = ANC_ENABLE_ON_SEARCH;
-
 
 		$this->setup_for_blog();
 
@@ -130,7 +111,7 @@ class Advanced_Nav_Cache {
 	 * @return string
 	 */
 	public function pre_wp_nav_menu( $output, $args ) {
-		if ( $this->isLoadFromCacheEnabled( $args ) ) {
+		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 			if ( $cached_value !== false ) {
 				$output = $cached_value;
@@ -147,7 +128,7 @@ class Advanced_Nav_Cache {
 	 * @return string
 	 */
 	public function wp_nav_menu( $output, $args ) {
-		if ( $this->isLoadFromCacheEnabled( $args ) ) {
+		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 			if ( $cached_value === false ) {
 				wp_cache_set( $this->get_key( $args ), $output, $this->cache_group );
@@ -163,12 +144,12 @@ class Advanced_Nav_Cache {
 	 * @return string
 	 */
 	public function get_key( $args ) {
-
-		$object_id = $this->make_cache_key( $this->get_variabled() );
-		$flat_args = $this->make_cache_key( $args );
+		$query_var = $this->get_query_vars();
+		$object_id = $this::make_cache_key( $query_var );
+		$flat_args = $this::make_cache_key( $args );
 		$cache_key = sprintf( '%s_%s', $object_id, $flat_args );
 
-		return $cache_key;
+		return apply_filters('advanced-nav-cache-key', $cache_key, $args, $query_var );
 	}
 
 	/**
@@ -177,7 +158,7 @@ class Advanced_Nav_Cache {
 	 *
 	 * @return string
 	 */
-	public function get_variabled() {
+	public function get_query_vars() {
 		global $wp_query;
 
 		if ( $wp_query->is_404() ) {
@@ -197,7 +178,7 @@ class Advanced_Nav_Cache {
 	 *
 	 * @return string
 	 */
-	public function make_cache_key( $key ) {
+	static public function make_cache_key( $key ) {
 		return md5( serialize( $key ) );
 	}
 
@@ -222,7 +203,7 @@ class Advanced_Nav_Cache {
 		$this->do_flush_cache = false;
 	}
 
-	/* Advanced Post Cache API */
+	/* Advanced Nav Cache API */
 
 	/**
 	 * Flushes the cache by incrementing the cache group
@@ -262,7 +243,7 @@ class Advanced_Nav_Cache {
 	 *
 	 * @return boolean
 	 */
-	public function isLoadFromCacheEnabled( $args = array() ) {
+	public function is_nav_cached_enabled( $args = array() ) {
 		$enabled = true;
 
 		if ( is_admin() ) {
@@ -285,14 +266,6 @@ class Advanced_Nav_Cache {
 		}
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			$enabled = false;
-		}
-
-		if ( is_search() ) {
-			$enabled = $this->cache_on_search;
-		}
-
-		if ( is_singular() && ! is_front_page() ) {
-			$enabled = $this->cache_on_single;
 		}
 
 		return apply_filters( 'advanced-nav-cache-enabled', $enabled, $args );
