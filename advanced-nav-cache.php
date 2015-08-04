@@ -113,7 +113,7 @@ class Advanced_Nav_Cache {
 	public function pre_wp_nav_menu( $output, $args ) {
 		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
-			if ( $cached_value !== false ) {
+			if ( false !== $cached_value ) {
 				$output = $cached_value;
 			}
 		}
@@ -130,7 +130,7 @@ class Advanced_Nav_Cache {
 	public function wp_nav_menu( $output, $args ) {
 		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
-			if ( $cached_value === false ) {
+			if ( false === $cached_value ) {
 				wp_cache_set( $this->get_key( $args ), $output, $this->cache_group );
 			}
 		}
@@ -149,7 +149,7 @@ class Advanced_Nav_Cache {
 		$flat_args = $this::make_cache_key( $args );
 		$cache_key = sprintf( '%s_%s', $object_id, $flat_args );
 
-		return apply_filters('advanced-nav-cache-key', $cache_key, $args, $query_var );
+		return apply_filters( 'advanced-nav-cache-key', $cache_key, $args, $query_var );
 	}
 
 	/**
@@ -227,8 +227,8 @@ class Advanced_Nav_Cache {
 		// We already flushed once this page load, and have not put anything into the cache since.
 		// OTHER processes may have put something into the cache!  In theory, this could cause stale caches.
 		// We do this since clean_post_cache() (which fires the action this method attaches to) is called RECURSIVELY for all descendants.
-//		if ( !$this->need_to_flush_cache )
-//			return;
+		// if ( !$this->need_to_flush_cache )
+		// return;
 
 		$this->cache_incr = wp_cache_incr( 'advanced_nav_cache', 1, 'cache_incrementors' );
 		if ( 10 < strlen( $this->cache_incr ) ) {
