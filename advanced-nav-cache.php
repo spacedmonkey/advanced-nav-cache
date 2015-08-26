@@ -13,7 +13,7 @@
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
  * Description:        Cache wp_nav_menu output in object cache.
- * Version:            1.0.0
+ * Version:            1.0.1
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
@@ -278,7 +278,6 @@ class Advanced_Nav_Cache {
 
 		return apply_filters( 'advanced-nav-cache-enabled', $enabled, $args );
 	}
-
 }
 
 global $advanced_nav_cache_object;
