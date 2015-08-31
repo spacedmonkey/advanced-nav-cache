@@ -73,6 +73,7 @@ class Advanced_Nav_Cache {
 
 		add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
 
+		add_action( 'wp_update_nav_menu', array( $this, 'clear_advanced_nav_cache' ) );
 		add_action( 'clean_term_cache', array( $this, 'clear_advanced_nav_cache' ) );
 		add_action( 'clean_post_cache', array( $this, 'clear_advanced_nav_cache' ) );
 
