@@ -13,7 +13,7 @@
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
  * Description:        Cache wp_nav_menu output in object cache.
- * Version:            1.0.2
+ * Version:            1.0.3
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
@@ -132,7 +132,7 @@ class Advanced_Nav_Cache {
 		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 			if ( false === $cached_value ) {
-				$expire = apply_filters( 'advanced-nav-cache-expire', 0, $args );
+				$expire = apply_filters( 'advanced_nav_cache_expire', 0, $args );
 				wp_cache_set( $this->get_key( $args ), $output, $this->cache_group, $expire );
 			}
 		}
@@ -151,7 +151,7 @@ class Advanced_Nav_Cache {
 		$flat_args = $this::make_cache_key( $args );
 		$cache_key = sprintf( '%s_%s', $object_id, $flat_args );
 
-		return apply_filters( 'advanced-nav-cache-key', $cache_key, $args, $query_var );
+		return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $query_var );
 	}
 
 	/**
@@ -209,7 +209,7 @@ class Advanced_Nav_Cache {
 	 * @return bool
 	 */
 	public function get_clear_advanced_nav_cache() {
-		return apply_filters( 'advanced-nav-cache-enable-flush', $this->do_flush_cache );
+		return apply_filters( 'advanced_nav_cache_enable_flush', $this->do_flush_cache );
 	}
 
 	/* Advanced Nav Cache API */
@@ -277,7 +277,7 @@ class Advanced_Nav_Cache {
 			$enabled = false;
 		}
 
-		return apply_filters( 'advanced-nav-cache-enabled', $enabled, $args );
+		return apply_filters( 'advanced_nav_cache_is_enabled', $enabled, $args );
 	}
 }
 
