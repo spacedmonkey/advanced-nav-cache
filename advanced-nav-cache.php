@@ -13,7 +13,7 @@
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
  * Description:        Cache wp_nav_menu output in object cache.
- * Version:            1.0.3
+ * Version:            1.0.4
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
@@ -26,14 +26,37 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+// Something went wrong, lets get out of here
+if ( class_exists( 'Advanced_Nav_Cache' ) ) {
+	return;
+}
+
+// Use definable cache group prefix
+defined( 'NAV_CACHE_GROUP_PREFIX' ) or define( 'NAV_CACHE_GROUP_PREFIX', 'advanced_nav_cache_' );
+
+// Set the expiry of nav cache objects
+defined( 'NAV_CACHE_EXPIRY' ) or define( 'NAV_CACHE_EXPIRY', 0 );
+
+// Set if wish to flush cache on defined hooks
+defined( 'NAV_DO_FLUSH_CACHE' ) or define( 'NAV_DO_FLUSH_CACHE', true );
+
+// Enable flushing on nav update
+defined( 'NAV_DO_FLUSH_CACHE_NAV' ) or define( 'NAV_DO_FLUSH_CACHE_NAV', true );
+
+// Enable flushing on term update
+defined( 'NAV_DO_FLUSH_CACHE_TERM' ) or define( 'NAV_DO_FLUSH_CACHE_TERM', true );
+
+// Enable flushing on any post update
+defined( 'NAV_DO_FLUSH_CACHE_POST' ) or define( 'NAV_DO_FLUSH_CACHE_POST', true );
+
+// Enable flushing on any page update
+defined( 'NAV_DO_FLUSH_CACHE_PAGE' ) or define( 'NAV_DO_FLUSH_CACHE_PAGE', true );
+
+
 /**
  * Class Advanced_Nav_Cache
  */
 class Advanced_Nav_Cache {
-	/**
-	 * @var string
-	 */
-	var $CACHE_GROUP_PREFIX = 'advanced_nav_cache_';
 
 	// Flag for temp (within one page load) turning invalidations on and off
 	// @see dont_clear_advanced_nav_cache()
@@ -42,7 +65,7 @@ class Advanced_Nav_Cache {
 	/**
 	 * @var bool
 	 */
-	var $do_flush_cache = true;
+	var $do_flush_cache = NAV_DO_FLUSH_CACHE;
 
 	// Flag for preventing multiple invalidations in a row: clean_post_cache() calls itself recursively for post children.
 	/**
@@ -58,7 +81,7 @@ class Advanced_Nav_Cache {
 	/**
 	 * @var string
 	 */
-	var $cache_group = ''; // CACHE_GROUP_PREFIX . $cache_incr
+	var $cache_group = ''; // NAV_CACHE_GROUP_PREFIX . $cache_incr
 
 	/**
 	 *
@@ -66,16 +89,28 @@ class Advanced_Nav_Cache {
 	function __construct() {
 		// Specific to certain Memcached Object Cache plugins
 		if ( function_exists( 'wp_cache_add_group_prefix_map' ) ) {
-			wp_cache_add_group_prefix_map( $this->CACHE_GROUP_PREFIX, 'advanced_nav_cache' );
+			wp_cache_add_group_prefix_map( NAV_CACHE_GROUP_PREFIX, 'advanced_nav_cache' );
 		}
 
 		$this->setup_for_blog();
 
 		add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
 
-		add_action( 'wp_update_nav_menu', array( $this, 'clear_advanced_nav_cache' ) );
-		add_action( 'clean_term_cache', array( $this, 'clear_advanced_nav_cache' ) );
-		add_action( 'clean_post_cache', array( $this, 'clear_advanced_nav_cache' ) );
+		if ( NAV_DO_FLUSH_CACHE_NAV ) {
+			add_action( 'wp_update_nav_menu', array( $this, 'clear_advanced_nav_cache' ) );
+		}
+
+		if ( NAV_DO_FLUSH_CACHE_TERM ) {
+			add_action( 'clean_term_cache', array( $this, 'clear_advanced_nav_cache' ) );
+		}
+
+		if ( NAV_DO_FLUSH_CACHE_POST ) {
+			add_action( 'clean_post_cache',   array( $this, 'clear_advanced_nav_cache' ) );
+		}
+
+		if ( NAV_DO_FLUSH_CACHE_PAGE ) {
+			add_action( 'clean_page_cache',   array( $this, 'clear_advanced_nav_cache' ) );
+		}
 
 		// Don't clear Advanced Post Cache for a new comment - temp core hack
 		// http://core.trac.wordpress.org/ticket/15565
@@ -102,7 +137,7 @@ class Advanced_Nav_Cache {
 			wp_cache_set( 'advanced_nav_cache', $now, 'cache_incrementors' );
 			$this->cache_incr = $now;
 		}
-		$this->cache_group = $this->CACHE_GROUP_PREFIX . $this->cache_incr;
+		$this->cache_group = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
 	}
 
 	/**
@@ -132,7 +167,7 @@ class Advanced_Nav_Cache {
 		if ( $this->is_nav_cached_enabled( $args ) ) {
 			$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 			if ( false === $cached_value ) {
-				$expire = apply_filters( 'advanced_nav_cache_expire', 0, $args );
+				$expire = apply_filters( 'advanced_nav_cache_expire', NAV_CACHE_EXPIRY , $args );
 				wp_cache_set( $this->get_key( $args ), $output, $this->cache_group, $expire );
 			}
 		}
@@ -172,7 +207,7 @@ class Advanced_Nav_Cache {
 		$page_variable['paged'] = 0;
 		asort( $page_variable );
 
-		return $page_variable;
+		return apply_filters( 'advanced_nav_cache_query_vars', $page_variable );
 	}
 
 	/**
@@ -244,7 +279,7 @@ class Advanced_Nav_Cache {
 			wp_cache_set( 'advanced_nav_cache', 0, 'cache_incrementors' );
 			$this->cache_incr = 0;
 		}
-		$this->cache_group         = $this->CACHE_GROUP_PREFIX . $this->cache_incr;
+		$this->cache_group         = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
 		$this->need_to_flush_cache = false;
 	}
 
