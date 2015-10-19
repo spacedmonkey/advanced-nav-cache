@@ -13,7 +13,7 @@
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
  * Description:        Cache wp_nav_menu output in object cache.
- * Version:            1.0.4
+ * Version:            1.1.0
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
@@ -82,6 +82,16 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		var $cache_group = ''; // NAV_CACHE_GROUP_PREFIX . $cache_incr
 
 		/**
+		 * @var string
+		 */
+		var $home_url = ''; // Current home URL
+
+		/**
+		 * @var string
+		 */
+		var $home_url_salt = ''; // Current home URL MD5ed
+
+		/**
 		 *
 		 */
 		function __construct() {
@@ -124,7 +134,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @param bool $new_blog_id
 		 * @param bool $previous_blog_id
 		 */
-		function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
+		public function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
+
+			$this->setup_home_url_vars();
+
 			if ( $new_blog_id && $new_blog_id == $previous_blog_id ) {
 				return;
 			}
@@ -136,6 +149,15 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				$this->cache_incr = $now;
 			}
 			$this->cache_group = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
+		}
+
+		/**
+		 *
+		 */
+		protected function setup_home_url_vars() {
+			$home_url            = home_url();
+			$this->home_url      = $home_url;
+			$this->home_url_salt = $this::make_cache_key( $home_url );
 		}
 
 		/**
@@ -179,12 +201,18 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @return string
 		 */
 		public function get_key( $args ) {
-			$query_var = $this->get_query_vars();
-			$object_id = $this::make_cache_key( $query_var );
-			$flat_args = $this::make_cache_key( $args );
-			$cache_key = sprintf( '%s_%s', $object_id, $flat_args );
+			if ( isset( $args['anc_ignore_context'] ) && $args['anc_ignore_context'] ) {
+				$context = array( 'no_context' );
+			} else {
+				$context = $this->get_query_vars();
+			}
 
-			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $query_var );
+			$object_id = $this::make_cache_key( $context );
+			$flat_args = $this::make_cache_key( $args );
+			$home_salt = $this->home_url_salt;
+			$cache_key = sprintf( '%s_%s_%s', $object_id, $flat_args, $home_salt );
+
+			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url );
 		}
 
 		/**
@@ -287,6 +315,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 */
 		public function is_nav_cached_enabled( $args = array() ) {
 			$enabled = true;
+
+			if ( isset( $args['anc_no_cache'] ) && $args['anc_no_cache'] ) {
+				$enabled = false;
+			}
 
 			if ( is_admin() ) {
 				$enabled = false;
