@@ -350,7 +350,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			return apply_filters( 'advanced_nav_cache_is_enabled', $enabled, $args );
 		}
 	}
-
-	global $advanced_nav_cache_object;
-	$advanced_nav_cache_object = new Advanced_Nav_Cache();
+	// Load the class a little later. Just in case
+	add_action( 'plugins_loaded', function () {
+		global $advanced_nav_cache_object;
+		$advanced_nav_cache_object = new Advanced_Nav_Cache();
+	} );
 }
