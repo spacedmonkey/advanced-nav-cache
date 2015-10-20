@@ -201,6 +201,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @return string
 		 */
 		public function get_key( $args ) {
+
+			$args = (array) $args;
+
 			if ( isset( $args['anc_ignore_context'] ) && $args['anc_ignore_context'] ) {
 				$context = array( 'no_context' );
 			} else {
@@ -315,6 +318,8 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 */
 		public function is_nav_cached_enabled( $args = array() ) {
 			$enabled = true;
+
+			$args = (array) $args;
 
 			if ( isset( $args['anc_no_cache'] ) && $args['anc_no_cache'] ) {
 				$enabled = false;
