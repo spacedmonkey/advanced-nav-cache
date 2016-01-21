@@ -100,7 +100,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				wp_cache_add_group_prefix_map( NAV_CACHE_GROUP_PREFIX, 'advanced_nav_cache' );
 			}
 
-			if ( function_exists( 'wp_cache_add_global_groups' ) ){
+			if ( function_exists( 'wp_cache_add_global_groups' ) ) {
 				wp_cache_add_global_groups( array( 'cache_incrementors' ) );
 			}
 
