@@ -95,7 +95,6 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 *
 		 */
 		function __construct() {
-		
 			$this->setup_for_blog();
 
 			add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
@@ -349,5 +348,4 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 
 	global $advanced_nav_cache_object;
 	$advanced_nav_cache_object = new Advanced_Nav_Cache();
-	
 }
