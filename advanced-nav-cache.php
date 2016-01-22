@@ -13,7 +13,7 @@
  * Plugin Name:        Advanced Nav Cache
  * Plugin URI:         https://www.github.com/spacedmonkey/advanced-nav-cache
  * Description:        Cache wp_nav_menu output in object cache.
- * Version:            1.1.2
+ * Version:            1.1.3
  * Author:             Jonathan Harris
  * Author URI:         http://www.jonathandavidharris.co.uk/
  * License:            GPL-2.0+
@@ -95,15 +95,6 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 *
 		 */
 		function __construct() {
-			// Specific to certain Memcached Object Cache plugins
-			if ( function_exists( 'wp_cache_add_group_prefix_map' ) ) {
-				wp_cache_add_group_prefix_map( NAV_CACHE_GROUP_PREFIX, 'advanced_nav_cache' );
-			}
-
-			if ( function_exists( 'wp_cache_add_global_groups' ) ) {
-				wp_cache_add_global_groups( array( 'cache_incrementors' ) );
-			}
-
 			$this->setup_for_blog();
 
 			add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
@@ -146,10 +137,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				return;
 			}
 
-			$this->cache_incr = wp_cache_get( 'advanced_nav_cache', 'cache_incrementors' ); // Get and construct current cache group name
+			$this->cache_incr = wp_cache_get( 'cache_incrementors', 'advanced_nav_cache' ); // Get and construct current cache group name
 			if ( ! is_numeric( $this->cache_incr ) ) {
 				$now = time();
-				wp_cache_set( 'advanced_nav_cache', $now, 'cache_incrementors' );
+				wp_cache_set( 'cache_incrementors', $now, 'advanced_nav_cache' );
 				$this->cache_incr = $now;
 			}
 			$this->cache_group = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
@@ -307,9 +298,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// if ( !$this->need_to_flush_cache )
 			// return;
 
-			$this->cache_incr = wp_cache_incr( 'advanced_nav_cache', 1, 'cache_incrementors' );
+			$this->cache_incr = wp_cache_incr( 'cache_incrementors', 1, 'advanced_nav_cache' );
 			if ( 10 < strlen( $this->cache_incr ) ) {
-				wp_cache_set( 'advanced_nav_cache', 0, 'cache_incrementors' );
+				wp_cache_set( 'cache_incrementors', 0, 'advanced_nav_cache' );
 				$this->cache_incr = 0;
 			}
 			$this->cache_group         = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
@@ -354,9 +345,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			return apply_filters( 'advanced_nav_cache_is_enabled', $enabled, $args );
 		}
 	}
-	// Load the class a little later. Just in case
-	add_action( 'plugins_loaded', function () {
-		global $advanced_nav_cache_object;
-		$advanced_nav_cache_object = new Advanced_Nav_Cache();
-	} );
+
+	global $advanced_nav_cache_object;
+	$advanced_nav_cache_object = new Advanced_Nav_Cache();
 }
