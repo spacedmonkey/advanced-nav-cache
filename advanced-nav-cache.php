@@ -123,6 +123,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
 
+			// Disable if not required
+			add_action( 'parse_query', array( $this, 'parse_query' ) );
+
 		}
 
 		/**
@@ -343,6 +346,20 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			}
 
 			return apply_filters( 'advanced_nav_cache_is_enabled', $enabled, $args );
+		}
+
+		/**
+		 * Improve compatablity with WordPress core caching.
+		 *
+		 * @param $query
+		 */
+		function parse_query( &$query ) {
+			if ( ! isset( $query->query_vars['post_type'] ) || 'nav_menu_item' !== $query->query_vars['post_type'] ) {
+				return $query;
+			}
+
+			$query->query_vars['suppress_filters'] = false;
+			$query->query_vars['cache_results']    = true;
 		}
 	}
 
