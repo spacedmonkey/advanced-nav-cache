@@ -168,7 +168,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 				if ( false !== $cached_value ) {
 					$output = $cached_value;
-				} else{
+				} else {
 					// If not in cache, enable query caching.
 					add_action( 'parse_query', array( $this, 'parse_query' ) );
 				}
