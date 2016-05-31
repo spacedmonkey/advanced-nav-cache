@@ -123,9 +123,6 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
 
-			// Disable if not required
-			add_action( 'parse_query', array( $this, 'parse_query' ) );
-
 		}
 
 		/**
@@ -165,10 +162,15 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @return string
 		 */
 		public function pre_wp_nav_menu( $output, $args ) {
+			// Make sure that the query caching isn't in play
+			remove_action( 'parse_query', array( $this, 'parse_query' ) );
 			if ( $this->is_nav_cached_enabled( $args ) ) {
 				$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 				if ( false !== $cached_value ) {
 					$output = $cached_value;
+				} else{
+					// If not in cache, enable query caching.
+					add_action( 'parse_query', array( $this, 'parse_query' ) );
 				}
 			}
 
@@ -189,7 +191,8 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 					wp_cache_set( $this->get_key( $args ), $output, $this->cache_group, $expire );
 				}
 			}
-
+			// Remove query caching after nav is done.
+			remove_action( 'parse_query', array( $this, 'parse_query' ) );
 			return $output;
 		}
 
@@ -354,10 +357,6 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @param $query
 		 */
 		function parse_query( &$query ) {
-			if ( ! isset( $query->query_vars['post_type'] ) || 'nav_menu_item' !== $query->query_vars['post_type'] ) {
-				return $query;
-			}
-
 			$query->query_vars['suppress_filters'] = false;
 			$query->query_vars['cache_results']    = true;
 		}
