@@ -162,9 +162,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		 * @return string
 		 */
 		public function pre_wp_nav_menu( $output, $args ) {
-			// Make sure that the query caching isn't in play
-			remove_action( 'parse_query', array( $this, 'parse_query' ) );
 			if ( $this->is_nav_cached_enabled( $args ) ) {
+				// Make sure that the query caching isn't in play
+				remove_action( 'parse_query', array( $this, 'parse_query' ) );
 				$cached_value = wp_cache_get( $this->get_key( $args ), $this->cache_group );
 				if ( false !== $cached_value ) {
 					$output = $cached_value;
@@ -190,9 +190,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 					$expire = apply_filters( 'advanced_nav_cache_expire', NAV_CACHE_EXPIRY, $args );
 					wp_cache_set( $this->get_key( $args ), $output, $this->cache_group, $expire );
 				}
+				// Remove query caching after nav is done.
+				remove_action( 'parse_query', array( $this, 'parse_query' ) );
 			}
-			// Remove query caching after nav is done.
-			remove_action( 'parse_query', array( $this, 'parse_query' ) );
+
 			return $output;
 		}
 
