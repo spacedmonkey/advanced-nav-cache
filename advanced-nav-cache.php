@@ -120,6 +120,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_nav_cache' ) );
 			add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_nav_cache' ) );
 
+			add_filter( 'wp_nav_menu_args', array( $this, 'wp_nav_menu_args' ) );
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
 
@@ -153,6 +154,24 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			$home_url            = home_url();
 			$this->home_url      = $home_url;
 			$this->home_url_salt = $this::make_cache_key( $home_url );
+		}
+
+		public function wp_nav_menu_args( $args ) {
+			if ( $this->is_nav_cached_enabled( $args ) ) {
+				$menu = $this->wp_get_nav_menu_object( $args->menu );
+				// Get the nav menu based on the theme_location
+				if ( ! $menu && $args->theme_location && ( $locations = get_nav_menu_locations() ) && isset( $locations[ $args->theme_location ] ) ) {
+					$menu = $this->wp_get_nav_menu_object( $locations[ $args->theme_location ] );
+					if ( ! $menu ) {
+						unset( $args->theme_location );
+					}
+				}
+				if ( ! $menu ) {
+					$args->menu = $menu;
+				}
+			}
+
+			return $args;
 		}
 
 		/**
@@ -241,6 +260,57 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			return apply_filters( 'advanced_nav_cache_query_vars', $page_variable );
 		}
 
+		/**
+		 * @param $menu
+		 *
+		 * @return bool
+		 */
+		public function wp_get_nav_menu_object( $menu ) {
+			$menu_obj = false;
+			if ( is_object( $menu ) ) {
+				$menu_obj = $menu;
+			}
+			if ( $menu && ! $menu_obj ) {
+				$menu_obj = get_term( $menu, 'nav_menu' );
+				if ( ! $menu_obj ) {
+					$menu_obj = $this->get_term_by( 'slug', $menu, 'nav_menu' );
+				}
+				if ( ! $menu_obj ) {
+					$menu_obj = $this->get_term_by( 'name', $menu, 'nav_menu' );
+				}
+			}
+			if ( ! $menu_obj || is_wp_error( $menu_obj ) ) {
+				$menu_obj = false;
+			}
+
+			return $menu_obj;
+		}
+
+		public function get_term_by( $field, $value, $taxonomy = '' ) {
+			$args = array(
+				'hide_empty'             => false,
+				'number'                 => 1,
+				'taxonomy'               => $taxonomy,
+				'update_term_meta_cache' => false
+			);
+			if ( 'slug' == $field ) {
+				$args['slug'] = $value;
+			} elseif ( 'name' == $field ) {
+				$args['name'] = $value;
+			} else {
+				return get_term_by( $field, $value, $taxonomy );
+			}
+
+			$terms = get_terms( $args );
+
+			if ( is_wp_error( $terms ) || empty( $terms ) ) {
+				return false;
+			}
+
+			$term = array_shift( $terms );
+
+			return $term;
+		}
 		/**
 		 * @param $key
 		 *
