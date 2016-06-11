@@ -163,12 +163,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				// Get the nav menu based on the theme_location
 				if ( ! $menu && $args->theme_location && ( $locations = get_nav_menu_locations() ) && isset( $locations[ $args->theme_location ] ) ) {
 					$menu = $this->wp_get_nav_menu_object( $locations[ $args->theme_location ] );
-					if ( $menu ) {
-						unset( $args->theme_location );
-					}
 				}
 				if ( $menu ) {
 					$args->menu = $menu;
+					$args->theme_location = false;
 				}
 			}
 
