@@ -27,7 +27,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Use definable cache group prefix
-defined( 'NAV_CACHE_GROUP_PREFIX' ) or define( 'NAV_CACHE_GROUP_PREFIX', 'advanced_nav_cache_' );
+defined( 'NAV_CACHE_GROUP_PREFIX' ) or define( 'NAV_CACHE_GROUP_PREFIX', 'advanced_nav_cache' );
 
 // Set the expiry of nav cache objects
 defined( 'NAV_CACHE_EXPIRY' ) or define( 'NAV_CACHE_EXPIRY', 0 );
@@ -141,12 +141,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			}
 
 			$this->cache_incr = wp_cache_get( 'cache_incrementors', 'advanced_nav_cache' ); // Get and construct current cache group name
-			if ( ! is_numeric( $this->cache_incr ) ) {
-				$now = time();
-				wp_cache_set( 'cache_incrementors', $now, 'advanced_nav_cache' );
-				$this->cache_incr = $now;
+			if ( false === $this->cache_incr ) {
+				$this->flush_cache();
 			}
-			$this->cache_group = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
+
 		}
 
 		/**
@@ -234,9 +232,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			$object_id = $this::make_cache_key( $context );
 			$flat_args = $this::make_cache_key( $args );
 			$home_salt = $this->home_url_salt;
-			$cache_key = sprintf( '%s_%s_%s', $object_id, $flat_args, $home_salt );
+			$salt      = $this->cache_incr;
+			$cache_key = sprintf( '%s_%s_%s_%s', $object_id, $flat_args, $salt, $home_salt );
 
-			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url );
+			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url, $salt );
 		}
 
 		/**
@@ -410,12 +409,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// if ( !$this->need_to_flush_cache )
 			// return;
 
-			$this->cache_incr = wp_cache_incr( 'cache_incrementors', 1, 'advanced_nav_cache' );
-			if ( 10 < strlen( $this->cache_incr ) ) {
-				wp_cache_set( 'cache_incrementors', 0, 'advanced_nav_cache' );
-				$this->cache_incr = 0;
-			}
-			$this->cache_group         = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
+			$this->cache_incr = microtime();
+			wp_cache_set( 'cache_incrementors', $this->cache_incr, 'advanced_nav_cache' );
+
 			$this->need_to_flush_cache = false;
 		}
 
