@@ -140,9 +140,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				return;
 			}
 
-			$this->cache_incr = wp_cache_get( 'cache_incrementors', 'advanced_nav_cache' ); // Get and construct current cache group name
+			$this->cache_incr = wp_cache_get( 'cache_incrementors', $this->cache_group ); // Get and construct current cache group name
 			if ( false === $this->cache_incr ) {
-				$this->flush_cache();
+				$this->cache_incr = microtime();
+				wp_cache_set( 'cache_incrementors', $this->cache_incr, $this->cache_group );
 			}
 
 		}
@@ -303,15 +304,14 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			}
 
 			$cache_key   = $field . '|' . $taxonomy . '|' . md5( $value );
-			$cache_group = 'anc_get_term_by';
-			$term_id     = wp_cache_get( $cache_key, $cache_group );
+			$term_id     = wp_cache_get( $cache_key, $this->cache_group );
 
 			if ( false === $term_id ) {
 				$term = get_term_by( $field, $value, $taxonomy );
 				if ( $term && ! is_wp_error( $term ) ) {
-					wp_cache_set( $cache_key, $term->term_id, $cache_group );
+					wp_cache_set( $cache_key, $term->term_id, $this->cache_group );
 				} else {
-					wp_cache_set( $cache_key, 0, $cache_group );
+					wp_cache_set( $cache_key, 0, $this->cache_group );
 				} // if we get an invalid value, let's cache it anyway
 			} else {
 				$term = get_term( $term_id, $taxonomy, $output, $filter );
@@ -338,8 +338,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			}
 			foreach ( array( 'name', 'slug' ) as $field ) {
 				$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
-				$cache_group = 'anc_get_term_by';
-				wp_cache_delete( $cache_key, $cache_group );
+				wp_cache_delete( $cache_key, $this->cache_group );
 			}
 		}
 
