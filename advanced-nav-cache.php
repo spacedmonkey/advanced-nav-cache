@@ -231,11 +231,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 
 			$object_id = $this::make_cache_key( $context );
 			$flat_args = $this::make_cache_key( $args );
-			$home_salt = $this->home_url_salt;
-			$salt      = $this->cache_incr;
-			$cache_key = sprintf( '%s_%s_%s_%s', $object_id, $flat_args, $salt, $home_salt );
+			$cache_key = sprintf( '%s_%s_%s_%s', $object_id, $flat_args, $this->cache_incr, $this->home_url_salt );
 
-			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url, $salt );
+			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url, $this->cache_incr );
 		}
 
 		/**
