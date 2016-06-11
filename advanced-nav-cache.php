@@ -119,12 +119,12 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// http://core.trac.wordpress.org/ticket/15565
 			add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_nav_cache' ) );
 			add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_nav_cache' ) );
-			add_action( 'edit_terms', array( $this, 'wp_flush_get_term_cache'), 10, 2 );
+			add_action( 'edit_nav_menu', array( $this, 'wp_flush_get_term_cache'), 10, 2 );
 
 			add_filter( 'wp_nav_menu_args', array( $this, 'wp_nav_menu_args' ) );
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
-			
+
 		}
 
 		/**
