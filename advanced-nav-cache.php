@@ -273,7 +273,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				$menu_obj = $menu;
 			}
 			if ( $menu && ! $menu_obj ) {
-				if ( is_int( $menu ) ) {
+				if ( is_numeric( $menu ) ) {
 					$menu_obj = get_term( $menu, 'nav_menu' );
 				}
 				if ( ! $menu_obj ) {
