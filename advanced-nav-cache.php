@@ -273,7 +273,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				$menu_obj = $menu;
 			}
 			if ( $menu && ! $menu_obj ) {
-				$menu_obj = get_term( $menu, 'nav_menu' );
+				if ( is_int( $menu ) ) {
+					$menu_obj = get_term( $menu, 'nav_menu' );
+				}
 				if ( ! $menu_obj ) {
 					$menu_obj = $this->get_term_by( 'slug', $menu, 'nav_menu' );
 				}
