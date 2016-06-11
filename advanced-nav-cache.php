@@ -291,7 +291,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				'hide_empty'             => false,
 				'number'                 => 1,
 				'taxonomy'               => $taxonomy,
-				'update_term_meta_cache' => false
+				'update_term_meta_cache' => false,
 			);
 			if ( 'slug' == $field ) {
 				$args['slug'] = $value;
