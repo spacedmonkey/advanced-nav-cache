@@ -119,11 +119,12 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// http://core.trac.wordpress.org/ticket/15565
 			add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_nav_cache' ) );
 			add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_nav_cache' ) );
+			add_action( 'edit_terms', array( $this, 'wp_flush_get_term_cache'), 10, 2 );
 
 			add_filter( 'wp_nav_menu_args', array( $this, 'wp_nav_menu_args' ) );
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
-
+			
 		}
 
 		/**
@@ -290,31 +291,58 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			return $menu_obj;
 		}
 
-		public function get_term_by( $field, $value, $taxonomy = '' ) {
-			$args = array(
-				'hide_empty'             => false,
-				'number'                 => 1,
-				'taxonomy'               => $taxonomy,
-				'update_term_meta_cache' => false,
-			);
-			if ( 'slug' == $field ) {
-				$args['slug'] = $value;
-			} elseif ( 'name' == $field ) {
-				$args['name'] = $value;
+		/**
+		 * @param $field
+		 * @param $value
+		 * @param string $taxonomy
+		 * @param $output
+		 * @param string $filter
+		 *
+		 * @return bool
+		 */
+		public function get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' ) {
+			// ID lookups are cached
+			if ( 'id' == $field ) {
+				return get_term_by( $field, $value, $taxonomy, $output, $filter );
+			}
+
+			$cache_key = $field . '|' . $taxonomy . '|' . md5( $value );
+			$term_id   = wp_cache_get( $cache_key, 'get_term_by' );
+
+			if ( false === $term_id ) {
+				$term = get_term_by( $field, $value, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					wp_cache_set( $cache_key, $term->term_id, 'get_term_by' );
+				} else {
+					wp_cache_set( $cache_key, 0, 'get_term_by' );
+				} // if we get an invalid value, let's cache it anyway
 			} else {
-				return get_term_by( $field, $value, $taxonomy );
+				$term = get_term( $term_id, $taxonomy, $output, $filter );
 			}
 
-			$terms = get_terms( $args );
-
-			if ( is_wp_error( $terms ) || empty( $terms ) ) {
-				return false;
+			if ( is_wp_error( $term ) ) {
+				$term = false;
 			}
-
-			$term = array_shift( $terms );
 
 			return $term;
 		}
+
+		/**
+		 * @param $term_id
+		 * @param $taxonomy
+		 */
+		public function wp_flush_get_term_cache( $term_id, $taxonomy ) {
+			$term = get_term_by( 'id', $term_id, $taxonomy );
+			if ( ! $term ) {
+				return;
+			}
+			foreach ( array( 'name', 'slug' ) as $field ) {
+				$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
+				$cache_group = 'get_term_by';
+				wp_cache_delete( $cache_key, $cache_group );
+			}
+		}
+
 		/**
 		 * @param $key
 		 *
