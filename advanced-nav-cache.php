@@ -306,15 +306,16 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				return get_term_by( $field, $value, $taxonomy, $output, $filter );
 			}
 
-			$cache_key = $field . '|' . $taxonomy . '|' . md5( $value );
-			$term_id   = wp_cache_get( $cache_key, 'get_term_by' );
+			$cache_key   = $field . '|' . $taxonomy . '|' . md5( $value );
+			$cache_group = 'anc_get_term_by';
+			$term_id     = wp_cache_get( $cache_key, $cache_group );
 
 			if ( false === $term_id ) {
 				$term = get_term_by( $field, $value, $taxonomy );
 				if ( $term && ! is_wp_error( $term ) ) {
-					wp_cache_set( $cache_key, $term->term_id, 'get_term_by' );
+					wp_cache_set( $cache_key, $term->term_id, $cache_group );
 				} else {
-					wp_cache_set( $cache_key, 0, 'get_term_by' );
+					wp_cache_set( $cache_key, 0, $cache_group );
 				} // if we get an invalid value, let's cache it anyway
 			} else {
 				$term = get_term( $term_id, $taxonomy, $output, $filter );
@@ -338,7 +339,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			}
 			foreach ( array( 'name', 'slug' ) as $field ) {
 				$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
-				$cache_group = 'get_term_by';
+				$cache_group = 'anc_get_term_by';
 				wp_cache_delete( $cache_key, $cache_group );
 			}
 		}
