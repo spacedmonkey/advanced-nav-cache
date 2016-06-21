@@ -409,7 +409,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// return;
 
 			$this->cache_incr = microtime();
-			wp_cache_set( 'cache_incrementors', $this->cache_incr, 'advanced_nav_cache' );
+			wp_cache_set( 'cache_incrementors', $this->cache_incr, $this->cache_group );
 
 			$this->need_to_flush_cache = false;
 		}
