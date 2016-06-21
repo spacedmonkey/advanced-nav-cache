@@ -31,3 +31,4 @@ local.properties
 nbproject/
 node_modules/*
 premium/node_modules/*
+.idea/
