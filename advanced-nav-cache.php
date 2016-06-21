@@ -27,7 +27,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Use definable cache group prefix
-defined( 'NAV_CACHE_GROUP_PREFIX' ) or define( 'NAV_CACHE_GROUP_PREFIX', 'advanced_nav_cache_' );
+defined( 'NAV_CACHE_GROUP_PREFIX' ) or define( 'NAV_CACHE_GROUP_PREFIX', 'advanced_nav_cache' );
 
 // Set the expiry of nav cache objects
 defined( 'NAV_CACHE_EXPIRY' ) or define( 'NAV_CACHE_EXPIRY', 0 );
@@ -79,7 +79,7 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 		/**
 		 * @var string
 		 */
-		var $cache_group = ''; // NAV_CACHE_GROUP_PREFIX . $cache_incr
+		var $cache_group = NAV_CACHE_GROUP_PREFIX;
 
 		/**
 		 * @var string
@@ -119,7 +119,10 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// http://core.trac.wordpress.org/ticket/15565
 			add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_nav_cache' ) );
 			add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_nav_cache' ) );
+			add_action( 'edited_terms', array( $this, 'wp_flush_get_term_cache' ), 10, 2 );
+			add_action( 'pre_delete_term', array( $this, 'wp_flush_get_term_cache' ), 10, 2 );
 
+			add_filter( 'wp_nav_menu_args', array( $this, 'wp_nav_menu_args' ) );
 			add_filter( 'pre_wp_nav_menu', array( $this, 'pre_wp_nav_menu' ), 9, 2 );
 			add_filter( 'wp_nav_menu', array( $this, 'wp_nav_menu' ), 99, 2 );
 
@@ -137,13 +140,12 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 				return;
 			}
 
-			$this->cache_incr = wp_cache_get( 'cache_incrementors', 'advanced_nav_cache' ); // Get and construct current cache group name
-			if ( ! is_numeric( $this->cache_incr ) ) {
-				$now = time();
-				wp_cache_set( 'cache_incrementors', $now, 'advanced_nav_cache' );
-				$this->cache_incr = $now;
+			$this->cache_incr = wp_cache_get( 'cache_incrementors', $this->cache_group ); // Get and construct current cache group name
+			if ( false === $this->cache_incr ) {
+				$this->cache_incr = microtime();
+				wp_cache_set( 'cache_incrementors', $this->cache_incr, $this->cache_group );
 			}
-			$this->cache_group = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
+
 		}
 
 		/**
@@ -153,6 +155,22 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			$home_url            = home_url();
 			$this->home_url      = $home_url;
 			$this->home_url_salt = $this::make_cache_key( $home_url );
+		}
+
+		public function wp_nav_menu_args( $args ) {
+			if ( $this->is_nav_cached_enabled( $args ) ) {
+				$menu = $this->wp_get_nav_menu_object( $args['menu'] );
+				// Get the nav menu based on the theme_location
+				if ( ! $menu && $args['theme_location'] && ( $locations = get_nav_menu_locations() ) && isset( $locations[ $args['theme_location'] ] ) ) {
+					$menu = $this->wp_get_nav_menu_object( $locations[ $args['theme_location'] ] );
+				}
+				if ( $menu ) {
+					$args['menu'] = $menu;
+					$args['theme_location'] = false;
+				}
+			}
+
+			return $args;
 		}
 
 		/**
@@ -214,10 +232,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 
 			$object_id = $this::make_cache_key( $context );
 			$flat_args = $this::make_cache_key( $args );
-			$home_salt = $this->home_url_salt;
-			$cache_key = sprintf( '%s_%s_%s', $object_id, $flat_args, $home_salt );
+			$cache_key = sprintf( '%s_%s_%s_%s', $object_id, $flat_args, $this->cache_incr, $this->home_url_salt );
 
-			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url );
+			return apply_filters( 'advanced_nav_cache_key', $cache_key, $args, $context, $this->home_url, $this->cache_incr );
 		}
 
 		/**
@@ -239,6 +256,92 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			asort( $page_variable );
 
 			return apply_filters( 'advanced_nav_cache_query_vars', $page_variable );
+		}
+
+		/**
+		 * @param $menu
+		 *
+		 * @return bool
+		 */
+		public function wp_get_nav_menu_object( $menu ) {
+			$menu_obj = false;
+			if ( empty( $menu ) ) {
+				return $menu_obj;
+			}
+
+			if ( is_object( $menu ) ) {
+				$menu_obj = $menu;
+			}
+			if ( $menu && ! $menu_obj ) {
+				if ( is_numeric( $menu ) ) {
+					$menu_obj = get_term( $menu, 'nav_menu' );
+				}
+				if ( ! $menu_obj ) {
+					$menu_obj = $this->get_term_by( 'slug', $menu, 'nav_menu' );
+				}
+				if ( ! $menu_obj ) {
+					$menu_obj = $this->get_term_by( 'name', $menu, 'nav_menu' );
+				}
+			}
+			if ( ! $menu_obj || is_wp_error( $menu_obj ) ) {
+				$menu_obj = false;
+			}
+
+			return $menu_obj;
+		}
+
+		/**
+		 * @param $field
+		 * @param $value
+		 * @param string $taxonomy
+		 * @param $output
+		 * @param string $filter
+		 *
+		 * @return bool
+		 */
+		public function get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' ) {
+			// ID lookups are cached
+			if ( 'id' == $field ) {
+				return get_term_by( $field, $value, $taxonomy, $output, $filter );
+			}
+
+			$cache_key   = $field . '|' . $taxonomy . '|' . md5( $value );
+			$term_id     = wp_cache_get( $cache_key, $this->cache_group );
+
+			if ( false === $term_id ) {
+				$term = get_term_by( $field, $value, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					wp_cache_set( $cache_key, $term->term_id, $this->cache_group );
+				} else {
+					wp_cache_set( $cache_key, 0, $this->cache_group );
+				} // if we get an invalid value, let's cache it anyway
+			} else {
+				$term = get_term( $term_id, $taxonomy, $output, $filter );
+			}
+
+			if ( is_wp_error( $term ) ) {
+				$term = false;
+			}
+
+			return $term;
+		}
+
+		/**
+		 * @param $term_id
+		 * @param $taxonomy
+		 */
+		public function wp_flush_get_term_cache( $term_id, $taxonomy ) {
+			if ( 'nav_menu' != $taxonomy ) {
+				return;
+			}
+			$term = get_term_by( 'id', $term_id, $taxonomy );
+			if ( ! $term ) {
+				return;
+			}
+			foreach ( array( 'name', 'slug' ) as $field ) {
+				$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
+				wp_cache_delete( $cache_key, $this->cache_group );
+			}
 		}
 
 		/**
@@ -305,12 +408,9 @@ if ( ! class_exists( 'Advanced_Nav_Cache' ) ) {
 			// if ( !$this->need_to_flush_cache )
 			// return;
 
-			$this->cache_incr = wp_cache_incr( 'cache_incrementors', 1, 'advanced_nav_cache' );
-			if ( 10 < strlen( $this->cache_incr ) ) {
-				wp_cache_set( 'cache_incrementors', 0, 'advanced_nav_cache' );
-				$this->cache_incr = 0;
-			}
-			$this->cache_group         = NAV_CACHE_GROUP_PREFIX . $this->cache_incr;
+			$this->cache_incr = microtime();
+			wp_cache_set( 'cache_incrementors', $this->cache_incr, 'advanced_nav_cache' );
+
 			$this->need_to_flush_cache = false;
 		}
 
