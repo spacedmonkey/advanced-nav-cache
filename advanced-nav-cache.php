@@ -6,7 +6,7 @@
  * @package   Advanced_Nav_Cache
  * @author    Jonathan Harris <jon@spacedmonkey.co.uk>
  * @license   GPL-2.0+
- * @link      http://www.jonathandavidharris.co.uk/
+ * @link      http://www.spacedmonkey.com/
  * @copyright 2015 Spacedmonkey
  *
  * @wordpress-plugin
@@ -15,7 +15,7 @@
  * Description:        Cache wp_nav_menu output in object cache.
  * Version:            1.1.3
  * Author:             Jonathan Harris
- * Author URI:         http://www.jonathandavidharris.co.uk/
+ * Author URI:         http://www.spacedmonkey.com/
  * License:            GPL-2.0+
  * License URI:        http://www.gnu.org/licenses/gpl-2.0.txt
  * GitHub Plugin URI:  https://www.github.com/spacedmonkey/advanced-nav-cache
