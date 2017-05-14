@@ -5,7 +5,7 @@ Cache wp_nav_menu output in object cache. This is a simple "dropin" style plugin
 
 This plugin is based on the ideas found in [Advanced Post Caching](https://github.com/Automattic/advanced-post-cache) plugin by [Automattic](http://automattic.com/).
 
-If you wish to follow the development of this plugin, view the code on the official plugin [website](http://www.jonathandavidharris.co.uk/ "website") or follow me on twitter [@thespacedmonkey](https://twitter.com/thespacedmonkey)
+If you wish to follow the development of this plugin, view the code on the official plugin [website](http://www.spacedmonkey.com/ "website") or follow me on twitter [@thespacedmonkey](https://twitter.com/thespacedmonkey)
 
 
 ## Installation
